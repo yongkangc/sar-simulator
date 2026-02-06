@@ -1,0 +1,50 @@
+{
+  "video": {
+    "source": "0",
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "reconnect_delay_ms": 3000
+  },
+  "joystick": {
+    "device_index": 0,
+    "deadzone": 0.1,
+    "sensitivity": 1.0,
+    "axis_mapping": {
+      "pan": 0,
+      "tilt": 1,
+      "zoom": 2,
+      "focus": 3
+    },
+    "button_mapping": {
+      "record_toggle": 0,
+      "snapshot": 1,
+      "reset_view": 2
+    },
+    "invert_pan": false,
+    "invert_tilt": false
+  },
+  "hud": {
+    "enabled": true,
+    "show_crosshair": true,
+    "show_telemetry": true,
+    "show_timestamp": true,
+    "show_joystick_indicator": true,
+    "crosshair_color": [0, 255, 0],
+    "text_color": [0, 255, 0],
+    "font_scale": 0.6,
+    "telemetry_position": "top_left"
+  },
+  "recording": {
+    "enabled": true,
+    "output_dir": "./recordings",
+    "format": "mp4",
+    "codec": "mp4v",
+    "include_hud": true
+  },
+  "window": {
+    "title": "SAR Simulator - EO Feed",
+    "fullscreen": false,
+    "always_on_top": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "sar-simulator",
+  "version": "1.0.0",
+  "description": "Search and Rescue Training Simulator with joystick control and EO video feed",
+  "homepage": "https://github.com/yongkangc/sar-simulator",
+  "license": "MIT",
+  "dependencies": [
+    "sdl2",
+    "opencv4",
+    "nlohmann-json"
+  ]
+}
