@@ -6,6 +6,25 @@
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
 
+## Architecture
+
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│   JOYSTICK   │      │    CAMERA    │      │   DISPLAY    │
+│   (USB HID)  │      │  (USB/RTSP)  │      │   WINDOW     │
+└──────┬───────┘      └──────┬───────┘      └──────▲───────┘
+       │                     │                     │
+       │ SDL2                │ OpenCV              │ OpenCV
+       ▼                     ▼                     │
+┌─────────────────────────────────────────────────────────────┐
+│                      MAIN LOOP                               │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────────────┐ │
+│  │Joystick │→ │  Video  │→ │   HUD   │→ │ Display/Record  │ │
+│  │ Input   │  │  Frame  │  │ Overlay │  │                 │ │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## Features
 
 - 🎮 **Industrial Joystick Support** — SDL2-based input with configurable axis mapping and deadzone
@@ -155,8 +174,14 @@ sar-simulator/
 │   ├── hud.cpp/h       # HUD overlay rendering
 │   └── recorder.cpp/h  # Session recording
 └── docs/
-    └── SETUP.md        # Detailed setup guide
+    ├── SETUP.md        # Detailed setup guide
+    └── INTEGRATION.md  # Architecture & integration guide
 ```
+
+## Documentation
+
+- **[SETUP.md](docs/SETUP.md)** — Step-by-step Windows installation
+- **[INTEGRATION.md](docs/INTEGRATION.md)** — Architecture diagrams, data flow, extending the code
 
 ## Dependencies
 
