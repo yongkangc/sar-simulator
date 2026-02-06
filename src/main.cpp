@@ -143,8 +143,10 @@ int main(int argc, char* argv[]) {
         if (it != config.joystick.button_mapping.end() && button == it->second) {
             if (recorder.isRecording()) {
                 recorder.stop();
-            } else {
+            } else if (video.getWidth() > 0 && video.getHeight() > 0) {
                 recorder.start(video.getWidth(), video.getHeight(), video.getFps());
+            } else {
+                std::cout << "Cannot start recording: no video source connected" << std::endl;
             }
         }
         
@@ -206,8 +208,10 @@ int main(int argc, char* argv[]) {
         } else if (key == 'r' || key == 'R') {
             if (recorder.isRecording()) {
                 recorder.stop();
-            } else {
+            } else if (video.getWidth() > 0 && video.getHeight() > 0) {
                 recorder.start(video.getWidth(), video.getHeight(), video.getFps());
+            } else {
+                std::cout << "Cannot start recording: no video source connected" << std::endl;
             }
         } else if (key == 'f' || key == 'F') {
             fullscreen = !fullscreen;

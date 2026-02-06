@@ -4,47 +4,6 @@
 
 namespace sar {
 
-// Static axis indices (set during init from config)
-static int s_panAxis = 0;
-static int s_tiltAxis = 1;
-static int s_zoomAxis = 2;
-static float s_deadzone = 0.1f;
-static float s_sensitivity = 1.0f;
-static bool s_invertPan = false;
-static bool s_invertTilt = false;
-
-float JoystickState::getPan() const {
-    if (s_panAxis < static_cast<int>(axes.size())) {
-        float val = axes[s_panAxis];
-        if (std::abs(val) < s_deadzone) return 0.0f;
-        float sign = val > 0 ? 1.0f : -1.0f;
-        float adjusted = (std::abs(val) - s_deadzone) / (1.0f - s_deadzone) * sign * s_sensitivity;
-        return s_invertPan ? -adjusted : adjusted;
-    }
-    return 0.0f;
-}
-
-float JoystickState::getTilt() const {
-    if (s_tiltAxis < static_cast<int>(axes.size())) {
-        float val = axes[s_tiltAxis];
-        if (std::abs(val) < s_deadzone) return 0.0f;
-        float sign = val > 0 ? 1.0f : -1.0f;
-        float adjusted = (std::abs(val) - s_deadzone) / (1.0f - s_deadzone) * sign * s_sensitivity;
-        return s_invertTilt ? -adjusted : adjusted;
-    }
-    return 0.0f;
-}
-
-float JoystickState::getZoom() const {
-    if (s_zoomAxis < static_cast<int>(axes.size())) {
-        float val = axes[s_zoomAxis];
-        if (std::abs(val) < s_deadzone) return 0.0f;
-        float sign = val > 0 ? 1.0f : -1.0f;
-        return (std::abs(val) - s_deadzone) / (1.0f - s_deadzone) * sign * s_sensitivity;
-    }
-    return 0.0f;
-}
-
 Joystick::Joystick() {}
 
 Joystick::~Joystick() {
@@ -54,21 +13,15 @@ Joystick::~Joystick() {
 bool Joystick::init(const JoystickConfig& config) {
     m_config = config;
     
-    // Store config values in statics for JoystickState accessors
-    s_deadzone = config.deadzone;
-    s_sensitivity = config.sensitivity;
-    s_invertPan = config.invert_pan;
-    s_invertTilt = config.invert_tilt;
-    
     // Parse axis mapping
     auto it = config.axis_mapping.find("pan");
-    if (it != config.axis_mapping.end()) s_panAxis = it->second;
+    if (it != config.axis_mapping.end()) m_panAxis = it->second;
     
     it = config.axis_mapping.find("tilt");
-    if (it != config.axis_mapping.end()) s_tiltAxis = it->second;
+    if (it != config.axis_mapping.end()) m_tiltAxis = it->second;
     
     it = config.axis_mapping.find("zoom");
-    if (it != config.axis_mapping.end()) s_zoomAxis = it->second;
+    if (it != config.axis_mapping.end()) m_zoomAxis = it->second;
     
     // Initialize SDL joystick subsystem if not already done
     if (!SDL_WasInit(SDL_INIT_JOYSTICK)) {
@@ -151,6 +104,8 @@ void Joystick::update() {
                         // Normalize from -32768..32767 to -1.0..1.0
                         m_state.axes[axis] = event.jaxis.value / 32767.0f;
                     }
+                    // Update processed values after any axis change
+                    updateProcessedValues();
                 }
                 break;
                 
@@ -188,6 +143,9 @@ void Joystick::handleDeviceAdded(int device_index) {
     
     std::cout << "Joystick connected: " << m_state.name << std::endl;
     std::cout << "  Axes: " << numAxes << ", Buttons: " << numButtons << ", Hats: " << numHats << std::endl;
+    
+    // Initialize processed values
+    updateProcessedValues();
 }
 
 void Joystick::handleDeviceRemoved(SDL_JoystickID instance_id) {
@@ -210,6 +168,31 @@ float Joystick::applyDeadzone(float value) const {
     
     float sign = value > 0 ? 1.0f : -1.0f;
     return (std::abs(value) - m_config.deadzone) / (1.0f - m_config.deadzone) * sign;
+}
+
+float Joystick::applyProcessing(float value, bool invert) const {
+    if (std::abs(value) < m_config.deadzone) {
+        return 0.0f;
+    }
+    
+    float sign = value > 0 ? 1.0f : -1.0f;
+    float adjusted = (std::abs(value) - m_config.deadzone) / (1.0f - m_config.deadzone) 
+                     * sign * m_config.sensitivity;
+    return invert ? -adjusted : adjusted;
+}
+
+void Joystick::updateProcessedValues() {
+    if (m_panAxis < static_cast<int>(m_state.axes.size())) {
+        m_state.pan = applyProcessing(m_state.axes[m_panAxis], m_config.invert_pan);
+    }
+    
+    if (m_tiltAxis < static_cast<int>(m_state.axes.size())) {
+        m_state.tilt = applyProcessing(m_state.axes[m_tiltAxis], m_config.invert_tilt);
+    }
+    
+    if (m_zoomAxis < static_cast<int>(m_state.axes.size())) {
+        m_state.zoom = applyProcessing(m_state.axes[m_zoomAxis], false);
+    }
 }
 
 std::vector<std::string> Joystick::enumerateDevices() {

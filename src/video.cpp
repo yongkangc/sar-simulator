@@ -39,6 +39,9 @@ void Video::shutdown() {
 }
 
 bool Video::openSource() {
+    // Guard against concurrent access (init vs captureThread)
+    std::lock_guard<std::mutex> lock(m_frameMutex);
+    
     // Try to parse as integer (camera index) or string (URL/file)
     try {
         int cameraIndex = std::stoi(m_config.source);
@@ -65,6 +68,10 @@ bool Video::openSource() {
     
     if (m_fps <= 0) m_fps = 30.0; // Default fallback
     
+    // Set sensible defaults if camera reports 0 (common with some drivers)
+    if (m_width <= 0) m_width = m_config.width;
+    if (m_height <= 0) m_height = m_config.height;
+    
     std::cout << "Video source opened: " << m_config.source << std::endl;
     std::cout << "  Resolution: " << m_width << "x" << m_height << " @ " << m_fps << " fps" << std::endl;
     
@@ -74,9 +81,19 @@ bool Video::openSource() {
 
 void Video::captureThread() {
     cv::Mat frame;
+    cv::VideoCapture localCapture;
+    bool needsReconnect = false;
     
     while (m_running) {
-        if (!m_capture.isOpened()) {
+        // Check if we need to reconnect
+        {
+            std::lock_guard<std::mutex> lock(m_frameMutex);
+            if (!m_capture.isOpened()) {
+                needsReconnect = true;
+            }
+        }
+        
+        if (needsReconnect) {
             m_connected = false;
             
             // Try to reconnect
@@ -85,23 +102,36 @@ void Video::captureThread() {
             if (m_running && openSource()) {
                 std::cout << "Video source reconnected." << std::endl;
             }
+            needsReconnect = false;
             continue;
         }
         
-        // Read frame
-        if (m_capture.read(frame) && !frame.empty()) {
+        // Read frame (don't hold lock during blocking read)
+        bool readSuccess = false;
+        {
+            std::lock_guard<std::mutex> lock(m_frameMutex);
+            if (m_capture.isOpened()) {
+                readSuccess = m_capture.read(frame);
+            }
+        }
+        
+        if (readSuccess && !frame.empty()) {
             std::lock_guard<std::mutex> lock(m_frameMutex);
             m_latestFrame = frame.clone();
             m_newFrame = true;
             m_connected = true;
-        } else {
+        } else if (!readSuccess) {
             // Read failed, probably disconnected
-            m_capture.release();
+            {
+                std::lock_guard<std::mutex> lock(m_frameMutex);
+                m_capture.release();
+            }
             m_connected = false;
             std::cout << "Video source disconnected. Attempting to reconnect..." << std::endl;
+            needsReconnect = true;
         }
         
-        // Maintain frame rate
+        // Small sleep to prevent busy-spinning
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }

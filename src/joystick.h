@@ -15,10 +15,15 @@ struct JoystickState {
     bool connected = false;
     std::string name;
     
-    // Convenience accessors with deadzone applied
-    float getPan() const;
-    float getTilt() const;
-    float getZoom() const;
+    // Processed values (with deadzone, sensitivity, inversion applied)
+    float pan = 0.0f;
+    float tilt = 0.0f;
+    float zoom = 0.0f;
+    
+    // Convenience accessors
+    float getPan() const { return pan; }
+    float getTilt() const { return tilt; }
+    float getZoom() const { return zoom; }
 };
 
 class Joystick {
@@ -43,14 +48,21 @@ public:
     
 private:
     float applyDeadzone(float value) const;
+    float applyProcessing(float value, bool invert) const;
     void handleDeviceAdded(int device_index);
     void handleDeviceRemoved(SDL_JoystickID instance_id);
+    void updateProcessedValues();
     
     SDL_Joystick* m_joystick = nullptr;
     SDL_JoystickID m_instanceId = -1;
     JoystickConfig m_config;
     JoystickState m_state;
     ButtonCallback m_buttonCallback;
+    
+    // Axis indices (from config)
+    int m_panAxis = 0;
+    int m_tiltAxis = 1;
+    int m_zoomAxis = 2;
 };
 
 } // namespace sar

@@ -32,6 +32,11 @@ bool Recorder::start(int width, int height, double fps) {
         return false;
     }
     
+    if (width <= 0 || height <= 0 || fps <= 0) {
+        std::cerr << "Invalid video dimensions: " << width << "x" << height << " @ " << fps << " fps" << std::endl;
+        return false;
+    }
+    
     m_currentFilename = generateFilename();
     
     // Get codec fourcc
