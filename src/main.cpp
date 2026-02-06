@@ -1,5 +1,8 @@
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 #include <csignal>
 #include <SDL.h>
 #include <opencv2/opencv.hpp>
